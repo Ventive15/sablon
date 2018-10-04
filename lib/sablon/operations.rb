@@ -94,7 +94,15 @@ module Sablon
           #
           # fetch value optionally calling a predicate method
           value = conditon_expr.evaluate(env.context)
-          value = value.public_send(predicate) if predicate
+          arg_matches = /(?<m>==|!=|>=|<=|>|<)\s*(?<args>[^()]+)/.match(condition[:predicate])
+          if arg_matches.nil?
+            value = value.public_send(predicate) if predicate
+          else
+            m = arg_matches[:m].strip
+            args = arg_matches[:args].split(",").map { |arg| arg.strip }
+            value = value.public_send(m, *args) if value.respond_to?(m)
+          end
+
           #
           if truthy?(value)
             block.replace(block.process(env).reverse)
